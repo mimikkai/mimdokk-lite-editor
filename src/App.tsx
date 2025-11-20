@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { TemplateUploader } from './components/TemplateUploader';
 import { DynamicForm } from './components/DynamicForm';
 import { SessionList } from './components/SessionList';
+import { UserGuide } from './components/UserGuide';
 import { mimdokkClient } from './lib/worker-client';
 import { saveTemplate, saveSession, getAllSessions, getTemplate } from './lib/db';
 
@@ -61,6 +62,22 @@ function App() {
       setError('Failed to parse template. Please ensure it is a valid .docx file.');
     }
   }, []);
+
+  const handleLoadExample = useCallback(async () => {
+    try {
+      const response = await fetch('/examples/contact-info/example.docx');
+      if (!response.ok) throw new Error('Failed to fetch example template');
+      
+      const blob = await response.blob();
+      const buffer = await blob.arrayBuffer();
+      const file = new File([blob], 'example.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      
+      await handleUpload(file, buffer);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load example template.');
+    }
+  }, [handleUpload]);
 
   const handleFormChange = useCallback((key: string, value: string) => {
     setFormData((prev) => {
@@ -144,12 +161,22 @@ function App() {
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
         
         {/* Sidebar / Session List */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
           <SessionList 
             sessions={sessions} 
             onSelectSession={handleSelectSession} 
             onNewSession={handleNewSession} 
           />
+          
+          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-xs text-yellow-800">
+            <p className="font-semibold mb-1">Privacy & Data Warning</p>
+            <p>
+              All data is processed locally in your browser. Nothing is sent to any server.
+            </p>
+            <p className="mt-2">
+              <strong>Note:</strong> Saved sessions are stored in your browser's local storage. Clearing your browser data or using Incognito mode will result in data loss.
+            </p>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -166,7 +193,10 @@ function App() {
           )}
 
           {!templateBuffer ? (
-            <TemplateUploader onUpload={handleUpload} />
+            <div className="space-y-8">
+              <TemplateUploader onUpload={handleUpload} onLoadExample={handleLoadExample} />
+              <UserGuide />
+            </div>
           ) : (
             <div className="space-y-6">
               <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border">
