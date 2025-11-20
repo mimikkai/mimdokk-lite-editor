@@ -65,7 +65,7 @@ function App() {
 
   const handleLoadExample = useCallback(async () => {
     try {
-      const response = await fetch('/examples/contact-info/example.docx');
+      const response = await fetch(`${import.meta.env.BASE_URL}examples/contact-info/example.docx`);
       if (!response.ok) throw new Error('Failed to fetch example template');
       
       const blob = await response.blob();

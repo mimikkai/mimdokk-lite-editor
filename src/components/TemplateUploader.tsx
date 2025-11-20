@@ -42,7 +42,7 @@ export function TemplateUploader({ onUpload, onLoadExample }: TemplateUploaderPr
           Load Example Template
         </Button>
         <a 
-          href="/examples/contact-info/example.docx" 
+          href={`${import.meta.env.BASE_URL}examples/contact-info/example.docx`}
           download
           className="text-xs text-gray-500 hover:text-gray-700 underline"
         >
