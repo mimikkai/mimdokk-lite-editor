@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function UserGuide() {
   return (
     <div className="bg-blue-50 p-6 rounded-lg border border-blue-100 text-sm text-blue-900 space-y-4">

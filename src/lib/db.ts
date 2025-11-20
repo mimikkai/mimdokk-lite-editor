@@ -4,6 +4,7 @@ interface MimdokkDB extends DBSchema {
   templates: {
     key: number;
     value: {
+      id?: number;
       name: string;
       buffer: ArrayBuffer;
       tags: string[];
@@ -13,6 +14,7 @@ interface MimdokkDB extends DBSchema {
   sessions: {
     key: number;
     value: {
+      id?: number;
       templateId: number;
       formData: Record<string, string>;
       updatedAt: Date;
