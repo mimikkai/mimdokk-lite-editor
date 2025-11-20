@@ -51,7 +51,10 @@ function App() {
       setCurrentSessionId(null); // New session
       
       // Initialize form data
-      const initialData = extractedTags.reduce((acc, tag) => ({ ...acc, [tag]: '' }), {});
+      const initialData = extractedTags.reduce((acc, tag) => {
+        const [key, defaultValue] = tag.split('|');
+        return { ...acc, [key.trim()]: defaultValue ? defaultValue.trim() : '' };
+      }, {});
       setFormData(initialData);
     } catch (err) {
       console.error(err);
