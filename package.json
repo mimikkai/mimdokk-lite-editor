@@ -4,10 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev:frontend": "vite",
+    "dev:backend": "bun --hot server/index.ts",
+    "dev": "concurrently \"bun run dev:frontend\" \"bun run dev:backend\"",
     "build": "tsc -b && vite build",
+    "start": "bun run server/index.ts",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "bun test server/tests/"
   },
   "dependencies": {
     "@mimikkai/mimdokk": "github:mimikkai/mimdokk",
@@ -28,6 +32,7 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

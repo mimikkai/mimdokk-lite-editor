@@ -34,24 +34,24 @@ Decisions:
 
 ### Phase 1: Зависимости и база данных
 
-- [ ] Task 4 — Установить зависимости (concurrently, проверить pizzip/docxtemplater)
-- [ ] Task 5 — Создать `server/db.ts` — bun:sqlite, таблица templates
-- [ ] Task 6 — Создать `server/lib/docx.ts` — extract/render (порт из worker)
+- [x] Task 4 — Установить зависимости (concurrently, проверить pizzip/docxtemplater)
+- [x] Task 5 — Создать `server/db.ts` — bun:sqlite, таблица templates
+- [x] Task 6 — Создать `server/lib/docx.ts` — extract/render (порт из worker)
 
 ### Phase 2: API маршруты
 
-- [ ] Task 7 — Создать `server/routes/templates.ts` — POST/GET /api/templates
-- [ ] Task 8 — Создать `server/routes/generate.ts` — GET /api/generate/:id
-- [ ] Task 9 — Создать `server/index.ts` — Bun.serve() с роутингом и static serve
+- [x] Task 7 — Создать `server/routes/templates.ts` — POST/GET /api/templates
+- [x] Task 8 — Создать `server/routes/generate.ts` — GET /api/generate/:id
+- [x] Task 9 — Создать `server/index.ts` — Bun.serve() с роутингом и static serve
 
 ### Phase 3: Dev интеграция
 
-- [ ] Task 10 — Обновить `vite.config.ts` (proxy) и `package.json` (скрипты dev/start)
+- [x] Task 10 — Обновить `vite.config.ts` (proxy) и `package.json` (скрипты dev/start)
 
 ### Phase 4: Тесты
 
-- [ ] Task 11 — `server/tests/templates.test.ts` — тесты POST/GET /api/templates
-- [ ] Task 12 — `server/tests/generate.test.ts` — тесты GET /api/generate/:id
+- [x] Task 11 — `server/tests/templates.test.ts` — тесты POST/GET /api/templates
+- [x] Task 12 — `server/tests/generate.test.ts` — тесты GET /api/generate/:id
 
 ## Affected Files
 

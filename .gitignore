@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+# Local Claude settings
+.claude/settings.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
