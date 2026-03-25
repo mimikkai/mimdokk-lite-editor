@@ -6,16 +6,9 @@ interface DynamicFormProps {
   onChange: (key: string, value: string) => void;
   onSubmit: () => void;
   isGenerating: boolean;
-  onCopyLink?: () => void;
-  isCopyingLink?: boolean;
-  linkCopied?: boolean;
-  outputFileName?: string;
-  onOutputFileNameChange?: (value: string) => void;
-  uiLink?: string | null;
-  generatedLink?: string | null;
 }
 
-export function DynamicForm({ tags, values, onChange, onSubmit, isGenerating, onCopyLink, isCopyingLink, linkCopied, outputFileName, onOutputFileNameChange, uiLink, generatedLink }: DynamicFormProps) {
+export function DynamicForm({ tags, values, onChange, onSubmit, isGenerating }: DynamicFormProps) {
   if (tags.length === 0) {
     return <div className="text-center text-gray-500 py-8">No variables found in this template.</div>;
   }
@@ -66,62 +59,10 @@ export function DynamicForm({ tags, values, onChange, onSubmit, isGenerating, on
           </div>
         ))}
       </div>
-      <div className="pt-4 space-y-3 border-t border-gray-100">
-        {onOutputFileNameChange !== undefined && (
-          <div className="flex items-center gap-2 bg-gray-50 rounded-md px-3 py-2">
-            <span className="text-xs font-medium text-gray-400 whitespace-nowrap">Save as</span>
-            <input
-              id="_output_filename"
-              type="text"
-              value={outputFileName ?? ''}
-              onChange={(e) => onOutputFileNameChange(e.target.value)}
-              className="flex-1 h-7 rounded border border-gray-200 bg-white px-2 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
-              placeholder="filename.docx"
-            />
-          </div>
-        )}
-        {(uiLink || generatedLink) && (
-          <div className="flex flex-col space-y-2">
-            {uiLink && (
-              <div className="flex flex-col space-y-1">
-                <span className="text-xs font-medium text-gray-400">UI Link <span className="font-normal text-gray-300">(открывает форму)</span></span>
-                <input
-                  type="text"
-                  readOnly
-                  value={uiLink}
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                  className="w-full h-7 rounded border border-gray-200 bg-gray-50 px-2 text-xs text-gray-600 font-mono focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-text"
-                />
-              </div>
-            )}
-            {generatedLink && (
-              <div className="flex flex-col space-y-1">
-                <span className="text-xs font-medium text-gray-400">API Link <span className="font-normal text-gray-300">(скачивает документ)</span></span>
-                <input
-                  type="text"
-                  readOnly
-                  value={generatedLink}
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                  className="w-full h-7 rounded border border-gray-200 bg-gray-50 px-2 text-xs text-gray-600 font-mono focus:outline-none focus:ring-1 focus:ring-blue-400 cursor-text"
-                />
-              </div>
-            )}
-          </div>
-        )}
-        <div className="flex justify-end gap-2">
-          {onCopyLink && (
-            <Button
-              onClick={onCopyLink}
-              disabled={isCopyingLink || isGenerating}
-              variant="outline"
-            >
-              {isCopyingLink ? 'Copying...' : linkCopied ? '✓ Copied!' : 'Copy Link'}
-            </Button>
-          )}
-          <Button onClick={onSubmit} disabled={isGenerating || isCopyingLink}>
-            {isGenerating ? 'Generating...' : 'Generate Document'}
-          </Button>
-        </div>
+      <div className="pt-4 flex justify-end">
+        <Button onClick={onSubmit} disabled={isGenerating}>
+          {isGenerating ? 'Generating...' : 'Generate Document'}
+        </Button>
       </div>
     </div>
   );

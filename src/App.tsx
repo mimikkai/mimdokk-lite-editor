@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { TemplateUploader } from './components/TemplateUploader';
 import { DynamicForm } from './components/DynamicForm';
 import { SessionList } from './components/SessionList';
@@ -18,12 +18,7 @@ function App() {
   const [fileName, setFileName] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [outputFileName, setOutputFileName] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isCopyingLink, setIsCopyingLink] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const [serverTemplateId, setServerTemplateId] = useState<string | null>(null);
-  const [templateUrl, setTemplateUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   // Session Management
@@ -42,73 +37,19 @@ function App() {
     loadSessions();
   }, [loadSessions]);
 
-  // Auto-load template from URL params on page load
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const templateId = params.get('_template_id');
-    const tmplUrl = params.get('_template_url');
-    if (!templateId && !tmplUrl) return;
-
-    const presetData: Record<string, string> = {};
-    for (const [key, value] of params.entries()) {
-      if (!key.startsWith('_')) presetData[key] = value;
-    }
-    const presetFilename = params.get('_filename') ?? '';
-
-    const autoLoad = async () => {
-      try {
-        setError(null);
-        if (templateId) {
-          console.info('[App] auto-loading template from server id=', templateId);
-          const res = await fetch(`/api/templates/${templateId}`);
-          if (!res.ok) throw new Error(`Server returned ${res.status}`);
-          const { name, data } = await res.json();
-          const binary = atob(data);
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-          const buffer = bytes.buffer;
-          const file = new File([buffer], name, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-          await handleUpload(file, buffer);
-          setServerTemplateId(templateId);
-        } else if (tmplUrl) {
-          console.info('[App] auto-loading template from URL=', tmplUrl);
-          const proxyRes = await fetch(`/api/proxy?url=${encodeURIComponent(tmplUrl)}`);
-          if (!proxyRes.ok) throw new Error(`Proxy returned ${proxyRes.status}`);
-          const blob = await proxyRes.blob();
-          const buffer = await blob.arrayBuffer();
-          const rawSegment = tmplUrl.split('/').pop()?.split('?')[0] ?? '';
-          const decoded = decodeURIComponent(rawSegment);
-          const fileName = decoded.split('/').pop() || 'template.docx';
-          const file = new File([blob], fileName, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-          await handleUpload(file, buffer, tmplUrl);
-        }
-        if (Object.keys(presetData).length > 0) setFormData(presetData);
-        if (presetFilename) setOutputFileName(presetFilename);
-      } catch (err) {
-        console.error('[App] auto-load failed:', err);
-        setError('Failed to auto-load template from URL parameters.');
-      }
-    };
-    autoLoad();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleUpload = useCallback(async (file: File, buffer: ArrayBuffer, sourceUrl?: string) => {
+  const handleUpload = useCallback(async (file: File, buffer: ArrayBuffer) => {
     try {
       setError(null);
       const extractedTags = await mimdokkClient.parseTemplate(buffer);
-
+      
       // Save template to DB
       const templateId = await saveTemplate(file.name, buffer, extractedTags);
-
+      
       setTemplateBuffer(buffer);
       setFileName(file.name);
       setTags(extractedTags);
       setCurrentTemplateId(templateId);
       setCurrentSessionId(null); // New session
-      setServerTemplateId(null); // Reset server cache on new template
-      setTemplateUrl(sourceUrl ?? null);
-      setOutputFileName(`filled_${file.name}`);
       
       // Initialize form data
       const initialData = extractedTags.reduce((acc, tag) => {
@@ -144,23 +85,6 @@ function App() {
       return newData;
     });
   }, []);
-
-  // Sync form state to URL params
-  useEffect(() => {
-    if (!templateBuffer) {
-      window.history.replaceState(null, '', window.location.pathname);
-      return;
-    }
-    const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(formData)) {
-      if (value) params.set(key, value);
-    }
-    if (outputFileName) params.set('_filename', outputFileName);
-    if (serverTemplateId) params.set('_template_id', serverTemplateId);
-    else if (templateUrl) params.set('_template_url', templateUrl);
-    const search = params.toString();
-    window.history.replaceState(null, '', search ? `?${search}` : window.location.pathname);
-  }, [formData, outputFileName, serverTemplateId, templateUrl, templateBuffer]);
 
   // Auto-save effect
   useEffect(() => {
@@ -205,81 +129,7 @@ function App() {
     setFormData({});
     setCurrentTemplateId(null);
     setCurrentSessionId(null);
-    setServerTemplateId(null);
-    setTemplateUrl(null);
-    setOutputFileName('');
   }, []);
-
-  const uiLink = useMemo(() => {
-    if (!templateBuffer) return null;
-    if (!serverTemplateId && !templateUrl) return null;
-    const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(formData)) {
-      if (value) params.set(key, value);
-    }
-    if (outputFileName) params.set('_filename', outputFileName);
-    if (serverTemplateId) params.set('_template_id', serverTemplateId);
-    else if (templateUrl) params.set('_template_url', templateUrl);
-    const search = params.toString();
-    return `${window.location.origin}${window.location.pathname}${search ? '?' + search : ''}`;
-  }, [templateBuffer, serverTemplateId, templateUrl, formData, outputFileName]);
-
-  const generatedLink = useMemo(() => {
-    if (!serverTemplateId) return null;
-    const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(formData)) {
-      if (value) params.set(key, value);
-    }
-    if (outputFileName) params.set('_filename', outputFileName);
-    return `${window.location.origin}/api/generate/${serverTemplateId}?${params}`;
-  }, [serverTemplateId, formData, outputFileName]);
-
-  const handleCopyLink = useCallback(async () => {
-    if (!templateBuffer) return;
-
-    try {
-      setIsCopyingLink(true);
-      setError(null);
-
-      let templateId = serverTemplateId;
-
-      if (!templateId) {
-        const base64 = btoa(
-          String.fromCharCode(...new Uint8Array(templateBuffer))
-        );
-        const res = await fetch('/api/templates', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: fileName, data: base64 }),
-        });
-
-        if (!res.ok) {
-          throw new Error(`Server error: ${res.status}`);
-        }
-
-        const body = await res.json();
-        templateId = body.id as string;
-        setServerTemplateId(templateId);
-      }
-
-      const params = new URLSearchParams();
-      for (const [key, value] of Object.entries(formData)) {
-        if (value) params.set(key, value);
-      }
-      if (outputFileName) params.set('_filename', outputFileName);
-
-      const link = `${window.location.origin}/api/generate/${templateId}?${params}`;
-
-      await navigator.clipboard.writeText(link);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 1000);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to copy link. Make sure the backend server is running.');
-    } finally {
-      setIsCopyingLink(false);
-    }
-  }, [templateBuffer, fileName, formData, serverTemplateId]);
 
   const handleGenerate = useCallback(async () => {
     if (!templateBuffer) return;
@@ -293,7 +143,7 @@ function App() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = outputFileName || `filled_${fileName}`;
+      a.download = `filled_${fileName}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -319,12 +169,12 @@ function App() {
           />
           
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-xs text-yellow-800">
-            <p className="font-semibold mb-1">Privacy & Data</p>
+            <p className="font-semibold mb-1">Privacy & Data Warning</p>
             <p>
-              Documents are generated locally in your browser. Saved sessions are stored in local storage only.
+              All data is processed locally in your browser. Nothing is sent to any server.
             </p>
             <p className="mt-2">
-              <strong>Copy Link</strong> uploads the template to the local server to generate a shareable URL. No data leaves your machine.
+              <strong>Note:</strong> Saved sessions are stored in your browser's local storage. Clearing your browser data or using Incognito mode will result in data loss.
             </p>
           </div>
         </div>
@@ -359,19 +209,12 @@ function App() {
                 </button>
               </div>
               
-              <DynamicForm
-                tags={tags}
-                values={formData}
-                onChange={handleFormChange}
+              <DynamicForm 
+                tags={tags} 
+                values={formData} 
+                onChange={handleFormChange} 
                 onSubmit={handleGenerate}
                 isGenerating={isGenerating}
-                onCopyLink={handleCopyLink}
-                isCopyingLink={isCopyingLink}
-                linkCopied={linkCopied}
-                outputFileName={outputFileName}
-                onOutputFileNameChange={setOutputFileName}
-                uiLink={uiLink}
-                generatedLink={generatedLink}
               />
             </div>
           )}
